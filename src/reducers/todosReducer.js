@@ -1,6 +1,7 @@
 import produce from "immer"
 
-import {startOf, successOf, GET_TODOS, DELETE_TODO, INSERT_TODO, UPDATE_COMPLETED} from './actions';
+import {GET_TODOS, DELETE_TODO, INSERT_TODO, UPDATE_COMPLETED} from './actions';
+import {startOf, successOf} from './actionDispatcher';
 
 
 // the state is just an array of todos

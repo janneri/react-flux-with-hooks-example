@@ -1,5 +1,6 @@
 import produce from "immer"
-import {startOf, successOf, GET_TODOS, CLEAR_ERROR} from './actions';
+import {GET_TODOS, CLEAR_ERROR} from './actions';
+import {startOf, successOf} from './actionDispatcher';
 
 export const initialState = {
         initialLoad: true,

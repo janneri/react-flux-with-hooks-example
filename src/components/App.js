@@ -1,13 +1,14 @@
 import React, {useEffect, useReducer} from 'react';
 import Logger from '../utils/logger';
 import {initialState, rootReducer} from '../reducers/rootReducer';
+import {dispatchActions} from '../reducers/actionDispatcher';
 import {
-    dispatchActions,
     DELETE_TODO,
     GET_TODOS,
     INSERT_TODO,
     UPDATE_COMPLETED,
-    UPDATE_CURRENT_FILTER_ID, CLEAR_ERROR
+    UPDATE_CURRENT_FILTER_ID,
+    CLEAR_ERROR
 } from '../reducers/actions';
 import TodoList from './TodoList';
 import TodoInput from './TodoInput';
