@@ -15,7 +15,8 @@ export const CLEAR_ERROR = 'CLEAR_ERROR';
 // Bind rest apis to action types
 
 const API_PREFIX = 'http://localhost:4000';
-const createEndpoint = (method, urltemplate, contentIsFile = false) => ({method, urlTemplate: API_PREFIX + urltemplate, contentIsFile});
+const createEndpoint = (method, urltemplate, contentIsFile = false) =>
+    ({method, urlTemplate: API_PREFIX + urltemplate, contentIsFile});
 
 export const endpoints = {
     [GET_TODOS]: createEndpoint('GET', '/todos'),

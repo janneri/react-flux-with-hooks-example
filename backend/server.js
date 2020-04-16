@@ -6,15 +6,19 @@ const port = 4000;
 app.use(cors());
 app.use(express.json({strict: false})); // for parsing application/json
 
+// Create artificial "load" so that the loading state is clearly visible
 const sleepMiddleware = (req, res, next) => {
     setTimeout(() => next(), 1000);
 };
-app.use(sleepMiddleware); // to create artificial "load"
+app.use(sleepMiddleware);
 
 
+// in-memory data(base)
 let todos = [{id: 1, text: 'learn react', completed: false}];
 let idSeq = 1;
 
+
+// routes
 app.get('/todos', (req, res) => res.send(todos));
 
 app.post('/todos', (req, res) => {
@@ -24,7 +28,7 @@ app.post('/todos', (req, res) => {
 });
 
 app.delete('/todos/:id', (req, res) => {
-    const todoId = parseInt(req.params.id, 10)
+    const todoId = parseInt(req.params.id, 10);
     todos = todos.filter(t => t.id !== todoId);
     res.send(null);
 });
@@ -34,5 +38,6 @@ app.put('/todos/:id', (req, res) => {
     todos[index].completed = !todos[index].completed;
     res.send(null);
 });
+
 
 app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`));
