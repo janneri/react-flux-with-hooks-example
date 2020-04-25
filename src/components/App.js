@@ -8,12 +8,14 @@ import {
     INSERT_TODO,
     UPDATE_COMPLETED,
     UPDATE_CURRENT_FILTER_ID,
-    CLEAR_ERROR
+    CLEAR_ERROR,
+    TOGGLE_ERRORMODE
 } from '../reducers/actions';
 import TodoList from './TodoList';
 import TodoInput from './TodoInput';
 import VisibilityFilterPanel from './VisibilityFilterPanel';
 import ErrorPanel from './ErrorPanel';
+import ToggleErrormodeButton from './ToggleErrorModeButton';
 
 function App() {
     const [rootState, myDispatch] = useReducer(rootReducer, initialState);
@@ -25,7 +27,7 @@ function App() {
     Logger.debug('rendering', rootState);
 
     return (
-        <div className="app">
+        <div className={rootState.ui.isErrormode ? 'app errormode' : 'app'}>
             <h2>todos</h2>
             <ErrorPanel
                 error={rootState.ui.error}
@@ -33,15 +35,20 @@ function App() {
             />
             <TodoInput
                 insertTodo={dispatchPayload(INSERT_TODO)}
-                disabled={rootState.ui.loadCount > 0}
+                disabled={rootState.ui.isLoading}
             />
             <TodoList
                 todos={rootState.todos}
                 currentFilterId={rootState.currentFilterId}
                 deleteTodo={dispatchPayload(DELETE_TODO)}
                 updateCompleted={dispatchPayload(UPDATE_COMPLETED)}
-                isLoading={rootState.ui.initialLoad}
-                disabled={rootState.ui.loadCount > 0}
+                isLoadingTodos={rootState.ui.incompleteAsyncActionTypes.includes(GET_TODOS)}
+                disabled={rootState.ui.isLoading}
+            />
+            <ToggleErrormodeButton
+                isErrormode={rootState.ui.isErrormode}
+                toggleErrormode={dispatchPayload(TOGGLE_ERRORMODE)}
+                disabled={rootState.ui.isLoading}
             />
             <VisibilityFilterPanel
                 currentFilterId={rootState.currentFilterId}

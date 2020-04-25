@@ -7,7 +7,7 @@ const ErrorPanel = ({error, clearError}) => {
                 {/* could implement some logic based on the error and cause action here ... */}
                 Oops, something went wrong!
             </span>
-            <span className="clear" onClick={clearError}>X</span>
+            <span className="clear" onClick={() => clearError()}>X</span>
         </div>
 
     );

@@ -1,19 +1,21 @@
 import produce from "immer"
-import {GET_TODOS, CLEAR_ERROR} from './actions';
+import {GET_TODOS, CLEAR_ERROR, TOGGLE_ERRORMODE} from './actions';
 import {startOf, successOf} from './actionDispatcher';
 
 export const initialState = {
         initialLoad: true,
-        loadCount: 0,
-        error: null
+        isLoading: false,
+        incompleteAsyncActionTypes: [],
+        error: null,
+        isErrormode: false
     };
 
 const uiReducer = (state, action) => produce(state, draft => {
         if (action.meta && action.meta.async && action.meta.started) {
-            draft.loadCount += 1;
+            draft.incompleteAsyncActionTypes.push(action.type);
         }
         if (action.meta && action.meta.async && (action.meta.succeeded || action.meta.failed)) {
-            draft.loadCount -= 1;
+            draft.incompleteAsyncActionTypes = state.incompleteAsyncActionTypes.filter(a => a !== action.type);
         }
         if (action.meta && action.meta.failed) {
             draft.error = {...action.payload, causeAction: action.meta.causeAction};
@@ -24,6 +26,10 @@ const uiReducer = (state, action) => produce(state, draft => {
         if (startOf(CLEAR_ERROR, action)) {
             draft.error = null;
         }
+        if (startOf(TOGGLE_ERRORMODE, action)) {
+            draft.isErrormode = !state.isErrormode;
+        }
+        draft.isLoading = draft.incompleteAsyncActionTypes.length > 0;
     });
 
 export default uiReducer;

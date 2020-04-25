@@ -23,6 +23,10 @@ code {
   padding-bottom: 0.1em;
 }
 
+.app.errormode {
+  border: thick solid red;
+}
+
 h2 {
   background-color: transparent;
 }
@@ -71,6 +75,11 @@ h2 {
 
 .complete {
   text-decoration: line-through;
+}
+
+button.toggle-errormode {
+  float: right;
+  margin-right: 1em;
 }
 
 .filters {

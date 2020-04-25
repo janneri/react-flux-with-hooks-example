@@ -4,13 +4,13 @@ import VisibilityFilters from '../utils/visibilityFilters';
 const isVisible = (todo, currentFilterId) =>
     currentFilterId === VisibilityFilters.SHOW_ALL.id ||
     (todo.completed && currentFilterId === VisibilityFilters.SHOW_COMPLETED.id) ||
-    (!todo.completed && currentFilterId === VisibilityFilters.SHOW_ACTIVE.id)
+    (!todo.completed && currentFilterId === VisibilityFilters.SHOW_ACTIVE.id);
 
-const TodoList = ({todos, currentFilterId, deleteTodo, updateCompleted, isLoading, disabled}) => (
+const TodoList = ({todos, currentFilterId, deleteTodo, updateCompleted, isLoadingTodos, disabled}) => (
     <div className="todo-list">
-        { isLoading && (
+        { isLoadingTodos && (
             <div className="loading-indicator">
-                Loading tasks...
+                Loading todos...
             </div>
         )}
         {

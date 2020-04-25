@@ -1,4 +1,3 @@
-import Logger from './logger';
 
 // A bit more fail safe way to handle response than just response.json it...
 function parseResponseBody(response) {
@@ -15,6 +14,13 @@ function parseResponseBody(response) {
     }
 
     return resultPromise;
+}
+
+function checkStatus(response) {
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response;
 }
 
 const GET_OPTIONS = {
@@ -47,10 +53,12 @@ export default {
         // Allows aborting http requests. See https://developer.mozilla.org/en-US/docs/Web/API/AbortController
         const controller = new AbortController();
         options.signal = controller.signal;
-        const fetchPromise = fetch(url, options).then(parseResponseBody);
+        const fetchPromise = fetch(url, options)
+            .then(checkStatus)
+            .then(parseResponseBody);
+
         // set timeout for the fetch:
         setTimeout(() => {
-            Logger.debug("Aborting fetch because of timeout");
             // When abort() is called, the fetch() promise rejects with a DOMException named AbortError.
             controller.abort()
         }, 2000);
