@@ -240,7 +240,7 @@ export const endpoints = {
 };
 ```
 
-## Action dispatching and backend calls
+## Action dispatching and the backend calls
 
 This is where the async magic happens. What happens here step by step:
 1. Check if the action is async? If not, dispatch it with meta ``{async: false}``. Otherwise
@@ -475,9 +475,12 @@ export default {
 
 Perhaps we are using too many libraries in our frontends? 
 You can go pretty damn far with plain React nowadays. 
-The thing, I missed the most in this experiment was [Redux DevTools](https://github.com/reduxjs/redux-devtools) for visualizing the state changes. 
+The thing, I missed the most in this experiment was [Redux DevTools](https://github.com/reduxjs/redux-devtools) for visualizing the state changes.
+On the otherhand, I like the simplicity of the implementation without Redux, Thunks, Sagas and so on.
 
- 
+I guess at least small and middle sized apps can easily be implemented with plain React.
+I hope that these code samples give an idea of what to do (and not do) in your own apps! 
+Cheers! 
 
 ## How to run?
 
