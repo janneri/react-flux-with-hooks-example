@@ -13,6 +13,7 @@ const sleepMiddleware = (req, res, next) => {
 app.use(sleepMiddleware);
 
 
+// Create a middleware that throws errors, if the errormode is toggled on. This helps us prototype error handling.
 let errormode = false;
 const errormodeMiddleware = (req, res, next) => {
     if (errormode) {

@@ -2,8 +2,8 @@ An example single page application (spa) with plain React. Also an experiment of
 
 ## Motivation
 
-Building applications with React and Redux has been fun and easy. But as always, the tools we use change, and we need to re-evaluate. 
-The hooks API, introduced with React 16.8 provides us something previously seen only in the flux-libraries.
+Building applications with React and Redux has been fun and easy. However, when the tools change, we need to re-evaluate. 
+The hooks API, introduced with React 16.8 provides us something previously seen only in the multitude of libraries.
 That is, the ability to dispatch actions and calculate component state based on the action and the previous state.
 This is how it looks in a basic container component:
 
@@ -21,7 +21,7 @@ const reducer = (state, action) => {
 function Counter() { 
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  // A bit like componentDidMount. Runs only once. Loads the initial count from the backend.
+  // A bit like componentDidMount. Runs only once, because of the empty dependency list. Loads the initial count from the backend.
   useEffect(() => dispatch({type: 'get_initial_count'}), []);
 
   return (
@@ -34,25 +34,26 @@ function Counter() {
 }
 ```  
 
-To evaluate whether or not I still want Redux in my toolchain, I need to build something without it, using plain React.
+To evaluate, whether or not I still want Redux in my toolchain, I need to build something using plain React.
 The example app should be small enough to implement in a reasonable time and big enough to make a point.
 To begin with, I decided to list the requirements and scope of evaluation.  
 
 ## Requirements for the example app / evaluation 
 
 The sample application is a todo list app, which allows the user to:
-1. add a todo items
+1. add todo items
 1. delete todo items
 1. mark items completed / not completed
 1. filter todo items (all/completed/not completed)
 
-The following non-functional requirements:
+Perhaps more importantly, we have the following non-functional requirements:
 1. The frontend loads todo items from a http/json API provided by a backend
 1. The frontend will add, delete and update items using the http/json API
 1. If the operation fails, an error message is shown. 
 1. After error, the UI state is in sync with the backend state.
 1. The UI clearly indicates a loading state. For example, loading items is not the same as no items. 
 1. Prevent double clicking delete item. Operations either succeed or fail before starting new operations.
+1. The UI updates optimistically - meaning the todo is added immediately and removed if the addition fails in the backend.
 
 These requirements should be enough to make the application complex/real enough for this evaluation.
 
@@ -76,10 +77,22 @@ const sleepMiddleware = (req, res, next) => {
 app.use(sleepMiddleware);
 
 
+// Create a middleware that throws errors, if the errormode is toggled on. This helps us prototype error handling.
+let errormode = false;
+const errormodeMiddleware = (req, res, next) => {
+    if (errormode) {
+        res.status(500).send({error: "Throwing because errormode is on!"})
+    }
+    else {
+        next();
+    }
+};
+app.use("/todos", errormodeMiddleware);
+
 // in-memory data(base)
 let todos = [{id: 1, text: 'learn react', completed: false}];
-let idSeq = 1;
 
+let idSeq = 1;
 
 // routes
 app.get('/todos', (req, res) => res.send(todos));
@@ -87,21 +100,34 @@ app.get('/todos', (req, res) => res.send(todos));
 app.post('/todos', (req, res) => {
     idSeq += 1;
     todos.push({id: idSeq, text: req.body, completed: false});
+    console.log("todo added, current todos are", todos);
     res.send(String(idSeq));
 });
 
 app.delete('/todos/:id', (req, res) => {
     const todoId = parseInt(req.params.id, 10);
     todos = todos.filter(t => t.id !== todoId);
+    console.log("todo deleted, current todos are", todos);
     res.send(null);
 });
 
 app.put('/todos/:id', (req, res) => {
-    const index = todos.findIndex(t => t.id === parseInt(req.params.id, 10));
+    const id = parseInt(req.params.id, 10);
+    console.log("updating todo", id);
+    const index = todos.findIndex(t => t.id === id);
+    if (!index) {
+        console.log("todo not found with id", id, "current todos are", todos);
+    }
     todos[index].completed = !todos[index].completed;
     res.send(null);
 });
 
+// just for testing, toggle errormode, where the backend throws errors for all the calls
+app.put('/errormode', (req, res) => {
+    errormode = !errormode;
+    console.log("errormode is now", errormode);
+    res.send(errormode);
+});
 
 app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`));
 ```
@@ -240,25 +266,27 @@ import {endpoints} from './actions';
  * Calls the backend api and dispatches actions.
  *
  * For example with action: {type: 'DELETE_TODO', payload: {todoId: 1}}:
- * 1. dispatch the action with meta: {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {started: true}}
+ * 1. dispatch the action enriched with meta: {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {started: true, transactionId: 1}}
  * 2. http fetch
  * 3. dispatch the action with either
- *      {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {succeeded: true}}
- *      {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {failed: true}}
+ *      {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {succeeded: true, transactionId: 1}}
+ *      {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {failed: true, transactionId: 1}}
  */
+let transactionIdSequence = 0;
 const callApiAndDispatchActions = (dispatch, action) => {
+    let transactionId = ++transactionIdSequence;
     try {
-        dispatch({type: action.type, payload: action.payload, meta: {started: true, async: true}});
+        dispatch({type: action.type, payload: action.payload, meta: {started: true, async: true, transactionId}});
         const endpoint = endpoints[action.type];
         const url = bindPathVariables(endpoint.urlTemplate, {pathVariables: action.payload});
         const httpRequestBody = getHttpRequestBody(endpoint.urlTemplate, action.payload);
 
         Logger.debug('calling', url, 'with requestbody', httpRequestBody);
         http.call(endpoint.method, url, httpRequestBody, endpoint.contentIsFile)
-            .then(result => dispatch({type: action.type, payload: result, meta: {succeeded: true, async: true}}))
-            .catch(error => dispatch({type: action.type, payload: error, meta: {failed: true, async: true, causeAction: action}}));
+            .then(result => dispatch({type: action.type, payload: result, meta: {succeeded: true, async: true, transactionId}}))
+            .catch(error => dispatch({type: action.type, payload: error, meta: {failed: true, async: true, causeAction: action, transactionId}}));
     } catch (error) {
-        dispatch({type: action.type, payload: error, meta: {failed: true, async: true, causeAction: action}});
+        dispatch({type: action.type, payload: error, meta: {failed: true, async: true, causeAction: action, transactionId}});
     }
 };
 
@@ -293,31 +321,94 @@ export const initialState = {
 };
 
 
-let prevValidState = initialState;
-
-export const rootReducer = (state, action) => {
+// The rollbacking reducer intercepts actions and rolls the state back when an async action fails.
+// This allows us to optimistically update the state and handle failure without writing any handlers for failed actions.
+// An alternative solution, which requires more work, but could be simpler is to write handlers for failed actions.
+export const rootReducer = rollbackingReducer((state, action) => {
     // This is basically a simple logging middleware ...
+    // Of course we could implement support for custom middleware,
+    // but all library-like code introduce complexity and make the call hierarchy more difficult to follow and understand.
     Logger.debugAction(action);
 
-    // Revert to previously known valid state, when failure
-    let baseState = state;
-    if (action.meta && action.meta.failed) {
-        baseState = prevValidState;
-    }
-    else {
-        prevValidState = state;
-    }
-
     return {
-        ui: uiReducer(baseState.ui, action),
-        todos: todosReducer(baseState.todos, action),
-        currentFilterId: filterReducer(baseState.currentFilterId, action)
+        ui: uiReducer(state.ui, action),
+        todos: todosReducer(state.todos, action),
+        currentFilterId: filterReducer(state.currentFilterId, action)
     }
-};
+});
 ```
 
-## UI reducer for handling the loading state (and Immer)
+## Transactions in the frontend - seriously?
 
+Yes I'm serious. The store is your database. Async actions are you transactions. 
+The started action is the same as "begin transaction" in relational databases.
+The succeeded action is the same as "commit" and the failed action corresponds to a rollback.
+
+In this ToDo app, toggling todos completed is not a blocking operation.
+It means that we could have two pending http calls, which can either succeed or fail.
+Also, we do not know, which one completes first.
+Here's an example of a transaction manager in the frontend:
+
+````javascript
+
+let transactions = [];
+let commitedState;
+
+// wrap your reducer with this
+export const rollbackingReducer = (rootReducer) => (state, action) => {
+    if (!commitedState) {
+        commitedState = state;
+    }
+
+    if (!action.meta.async) {
+        commitedState = rootReducer(commitedState, action);
+        return commitedState;
+    }
+
+    if (action.meta.async && action.meta.started) {
+        // when transaction begins, we capture a rollback point/state
+        transactions.push(action);
+        return rootReducer(state, action);
+    }
+
+    if (action.meta.async && action.meta.succeeded) {
+        // update the commited state
+        const startAction = transactions.find(t => t.meta.transactionId === action.meta.transactionId);
+        const startedState = rootReducer(commitedState, startAction);
+        commitedState = rootReducer(startedState, action);
+
+        // remove pending transaction
+        transactions = transactions.filter(t => t.meta.transactionId !== action.meta.transactionId);
+
+        // apply all pending transactions to get new state
+        if (transactions.length > 0) {
+            let newState = commitedState;
+            transactions.forEach(t => newState = rootReducer(newState, t));
+            return newState;
+        }
+        else {
+            return commitedState;
+        }
+    }
+
+    if (action.meta.async && action.meta.failed) {
+        // remove pending transaction
+        transactions = transactions.filter(t => t.meta.transactionId !== action.meta.transactionId);
+
+        // apply all pending transactions to get new state
+        if (transactions.length > 0) {
+            let newState = rootReducer(commitedState, action);
+            transactions.forEach(t => newState = rootReducer(newState, t));
+            return newState;
+        }
+        else {
+            return rootReducer(commitedState, action);
+        }
+    }
+};
+````
+
+## UI reducer for handling the loading state (and Immer)
 
 ```JavaScript
 import produce from "immer"
@@ -379,6 +470,14 @@ export default {
     }
 };
 ```
+
+## Conclusion
+
+Perhaps we are using too many libraries in our frontends? 
+You can go pretty damn far with plain React nowadays. 
+The thing, I missed the most in this experiment was [Redux DevTools](https://github.com/reduxjs/redux-devtools) for visualizing the state changes. 
+
+ 
 
 ## How to run?
 

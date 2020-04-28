@@ -10,11 +10,11 @@ import {endpoints} from './actions';
  * Calls the backend api and dispatches actions.
  *
  * For example with action: {type: 'DELETE_TODO', payload: {todoId: 1}}:
- * 1. dispatch the action with meta: {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {started: true}}
+ * 1. dispatch the action enriched with meta: {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {started: true, transactionId: 1}}
  * 2. http fetch
  * 3. dispatch the action with either
- *      {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {succeeded: true}}
- *      {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {failed: true}}
+ *      {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {succeeded: true, transactionId: 1}}
+ *      {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {failed: true, transactionId: 1}}
  */
 let transactionIdSequence = 0;
 const callApiAndDispatchActions = (dispatch, action) => {
