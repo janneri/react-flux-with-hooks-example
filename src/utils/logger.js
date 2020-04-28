@@ -14,6 +14,6 @@ export default {
 
     debugAction(action) {
         const actionSubType = action.meta.started ? 'started' : (action.meta.succeeded ? 'succeeded' : 'failed');
-        this.debug(action.type + " " + actionSubType + " with payload", action.payload);
+        this.debug(action.type + " " + actionSubType + " with payload", action.payload, "txId", action.meta.transactionId);
     }
 };

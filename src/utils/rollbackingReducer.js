@@ -36,7 +36,7 @@ export const rollbackingReducer = (rootReducer) => (state, action) => {
         // apply all pending transactions to get new state
         if (transactions.length > 0) {
             let newState = commitedState;
-            transactions.forEach(t => newState = rootReducer(newState, action));
+            transactions.forEach(t => newState = rootReducer(newState, t));
             return newState;
         }
         else {
@@ -50,12 +50,12 @@ export const rollbackingReducer = (rootReducer) => (state, action) => {
 
         // apply all pending transactions to get new state
         if (transactions.length > 0) {
-            let newState = commitedState;
+            let newState = rootReducer(commitedState, action);
             transactions.forEach(t => newState = rootReducer(newState, t));
             return newState;
         }
         else {
-            return commitedState;
+            return rootReducer(commitedState, action);
         }
     }
 };
