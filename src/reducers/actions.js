@@ -8,6 +8,7 @@ export const INSERT_TODO = 'INSERT_TODO';
 export const UPDATE_COMPLETED = 'UPDATE_COMPLETED';
 export const UPDATE_CURRENT_FILTER_ID = 'UPDATE_CURRENT_FILTER_ID';
 export const CLEAR_ERROR = 'CLEAR_ERROR';
+export const TOGGLE_ERRORMODE = 'TOGGLE_ERRORMODE';
 
 
 // ------------------------------------------------------
@@ -22,5 +23,6 @@ export const endpoints = {
     [GET_TODOS]: createEndpoint('GET', '/todos'),
     [DELETE_TODO]: createEndpoint('DELETE', '/todos/{id}'),
     [INSERT_TODO]: createEndpoint('POST', '/todos/'),
-    [UPDATE_COMPLETED]: createEndpoint('PUT', '/todos/{id}')
+    [UPDATE_COMPLETED]: createEndpoint('PUT', '/todos/{id}'),
+    [TOGGLE_ERRORMODE]: createEndpoint('PUT', '/errormode')
 };

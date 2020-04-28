@@ -3,6 +3,7 @@ import VisibilityFilters from '../utils/visibilityFilters';
 import uiReducer, {initialState as uiInitialState} from './uiReducer';
 import todosReducer from './todosReducer';
 import filterReducer from './filterReducer';
+import {rollbackingReducer} from '../utils/rollbackingReducer';
 
 export const initialState = {
     ui: uiInitialState,
@@ -10,25 +11,18 @@ export const initialState = {
     currentFilterId: VisibilityFilters.SHOW_ALL.id
 };
 
-
-let prevValidState = initialState;
-
-export const rootReducer = (state, action) => {
+// The rollbacking reducer intercepts actions and rolls the state back when an async action fails.
+// This allows us to optimistically update the state and handle failure without writing any handlers for failed actions.
+// An alternative solution, which requires more work, but could be simpler is to write handlers for failed actions.
+export const rootReducer = rollbackingReducer((state, action) => {
     // This is basically a simple logging middleware ...
+    // Of course we could implement support for custom middleware,
+    // but all library-like code introduce complexity and make the call hierarchy more difficult to follow and understand.
     Logger.debugAction(action);
 
-    // Revert to previously known valid state, when failure
-    let baseState = state;
-    if (action.meta && action.meta.failed) {
-        baseState = prevValidState;
-    }
-    else {
-        prevValidState = state;
-    }
-
     return {
-        ui: uiReducer(baseState.ui, action),
-        todos: todosReducer(baseState.todos, action),
-        currentFilterId: filterReducer(baseState.currentFilterId, action)
+        ui: uiReducer(state.ui, action),
+        todos: todosReducer(state.todos, action),
+        currentFilterId: filterReducer(state.currentFilterId, action)
     }
-};
+});

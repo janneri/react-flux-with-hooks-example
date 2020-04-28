@@ -16,19 +16,21 @@ import {endpoints} from './actions';
  *      {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {succeeded: true}}
  *      {type: 'DELETE_TODO', payload: {todoId: 1}}, meta: {failed: true}}
  */
+let transactionIdSequence = 0;
 const callApiAndDispatchActions = (dispatch, action) => {
+    let transactionId = ++transactionIdSequence;
     try {
-        dispatch({type: action.type, payload: action.payload, meta: {started: true, async: true}});
+        dispatch({type: action.type, payload: action.payload, meta: {started: true, async: true, transactionId}});
         const endpoint = endpoints[action.type];
         const url = bindPathVariables(endpoint.urlTemplate, {pathVariables: action.payload});
         const httpRequestBody = getHttpRequestBody(endpoint.urlTemplate, action.payload);
 
         Logger.debug('calling', url, 'with requestbody', httpRequestBody);
         http.call(endpoint.method, url, httpRequestBody, endpoint.contentIsFile)
-            .then(result => dispatch({type: action.type, payload: result, meta: {succeeded: true, async: true}}))
-            .catch(error => dispatch({type: action.type, payload: error, meta: {failed: true, async: true, causeAction: action}}));
+            .then(result => dispatch({type: action.type, payload: result, meta: {succeeded: true, async: true, transactionId}}))
+            .catch(error => dispatch({type: action.type, payload: error, meta: {failed: true, async: true, causeAction: action, transactionId}}));
     } catch (error) {
-        dispatch({type: action.type, payload: error, meta: {failed: true, async: true, causeAction: action}});
+        dispatch({type: action.type, payload: error, meta: {failed: true, async: true, causeAction: action, transactionId}});
     }
 };
 
